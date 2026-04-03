@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SP Knowledge</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary:#2e7d32;
+    --bg:#f9fafb;
+    --card:#fff;
+    --text:#333;
+}
+
+body.dark {
+    --bg:#121212;
+    --card:#1e1e1e;
+    --text:#eee;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter';}
+body{background:var(--bg);color:var(--text);}
+
+/* NAV */
+.navbar{
+    display:flex;justify-content:space-between;
+    padding:1rem 2rem;background:var(--card);
+}
+
+/* GRID */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:1rem;padding:2rem;
+}
+
+/* CARD */
+.card{
+    background:var(--card);
+    padding:1rem;border-radius:10px;text-align:center;
+}
+.card img{width:100%;border-radius:8px}
+
+button{
+    background:var(--primary);
+    color:#fff;border:none;padding:0.5rem 1rem;
+    border-radius:5px;margin-top:5px;cursor:pointer;
+}
+
+/* CART */
+.cart{
+    position:fixed;
+    right:10px;top:70px;
+    width:280px;
+    background:var(--card);
+    padding:1rem;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+/* SECTIONS */
+.section{text-align:center;padding:2rem;}
+
+input,select{
+    padding:0.5rem;margin:5px;width:200px;
+}
+
+.qr{width:150px;margin:10px;}
+
+#trackResult{margin-top:10px;font-weight:bold;}
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <h2>SP Knowledge</h2>
+    <button onclick="toggleDark()">🌙</button>
+</div>
+
+<h2 style="text-align:center;">Cricket Store</h2>
+
+<div class="grid">
+<div class="card">
+<img src="https://images.unsplash.com/photo-1605296867304-46d5465a13f1">
+<h3>Bat</h3>
+<p>₹2000</p>
+<button onclick="addToCart('Bat',2000)">Add</button>
+</div>
+
+<div class="card">
+<img src="https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff">
+<h3>Ball</h3>
+<p>₹500</p>
+<button onclick="addToCart('Ball',500)">Add</button>
+</div>
+
+<div class="card">
+<img src="https://images.unsplash.com/photo-1622279457486-28f7c9f7c6d2">
+<h3>Gloves</h3>
+<p>₹1200</p>
+<button onclick="addToCart('Gloves',1200)">Add</button>
+</div>
+</div>
+
+<!-- CART -->
+<div class="cart">
+<h3>Cart</h3>
+<div id="cartItems"></div>
+<p>Total: ₹<span id="total">0</span></p>
+<button onclick="showUPI()">Buy with UPI</button>
+</div>
+
+<!-- UPI -->
+<div class="section" id="upiSection" style="display:none;">
+<h2>UPI Payment</h2>
+<p>Pay to: <b>spknowledge@upi</b></p>
+
+<img id="qr" class="qr">
+
+<br>
+<button onclick="confirmPayment()">I Paid</button>
+</div>
+
+<!-- TRACK -->
+<div class="section">
+<h2>Track Order</h2>
+<input id="trackId" placeholder="Order ID">
+<br>
+<button onclick="trackOrder()">Track</button>
+<div id="trackResult"></div>
+</div>
+
+<!-- ADMIN -->
+<div class="section">
+<h2>Admin Panel</h2>
+<input id="adminId" placeholder="Order ID">
+<select id="status">
+<option>Processing</option>
+<option>Shipped</option>
+<option>Delivered</option>
+</select>
+<br>
+<button onclick="updateStatus()">Update</button>
+</div>
+
+<!-- CONTACT -->
+<div class="section">
+<h2>Contact</h2>
+<p>📞 999999999</p>
+<p>📧 spknowledge@gmail.com</p>
+</div>
+
+<script>
+let cart=[];
+let orders = JSON.parse(localStorage.getItem("orders")) || {};
+
+function saveOrders(){
+    localStorage.setItem("orders", JSON.stringify(orders));
+}
+
+function addToCart(name,price){
+    cart.push({name,price});
+    renderCart();
+}
+
+function renderCart(){
+    let html="", total=0;
+
+    cart.forEach((item,i)=>{
+        total+=item.price;
+        html+=`${item.name} ₹${item.price}
+        <button onclick="removeItem(${i})">X</button><br>`;
+    });
+
+    document.getElementById("cartItems").innerHTML=html;
+    document.getElementById("total").innerText=total;
+}
+
+function removeItem(i){
+    cart.splice(i,1);
+    renderCart();
+}
+
+function showUPI(){
+    if(cart.length===0){
+        alert("Cart empty!");
+        return;
+    }
+
+    let total = cart.reduce((s,i)=>s+i.price,0);
+
+    document.getElementById("upiSection").style.display="block";
+
+    document.getElementById("qr").src =
+    `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=spknowledge@upi&pn=SPKnowledge&am=${total}`;
+}
+
+function confirmPayment(){
+    let orderId = "ORD" + Math.floor(Math.random()*100000);
+
+    orders[orderId] = "Processing";
+    saveOrders();
+
+    alert("Order placed! ID: " + orderId);
+
+    window.open(`https://wa.me/91999999999?text=Order%20Placed:%20${orderId}`);
+
+    cart=[];
+    renderCart();
+}
+
+function trackOrder(){
+    let id=document.getElementById("trackId").value;
+
+    if(orders[id]){
+        document.getElementById("trackResult").innerText =
+        "Status: " + orders[id];
+    } else {
+        document.getElementById("trackResult").innerText =
+        "Order not found";
+    }
+}
+
+function updateStatus(){
+    let id=document.getElementById("adminId").value;
+    let status=document.getElementById("status").value;
+
+    if(orders[id]){
+        orders[id]=status;
+        saveOrders();
+        alert("Updated!");
+    } else {
+        alert("Invalid ID");
+    }
+}
+
+function toggleDark(){
+    document.body.classList.toggle("dark");
+}
+</script>
+
+</body>
+</html>
